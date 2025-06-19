@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Define path for your app's internal "UserContent" directory -->
+    <files-path
+        name="user_content"
+        path="UserContent/" />
+    <!-- You can add other paths here if needed, like cache-path or external-files-path -->
+</paths>

@@ -23,9 +23,12 @@
 
         <activity
             android:name=".MainActivity"
-            android:exported="false" /> <activity
-        android:name=".PasswordSetupActivity"
-        android:exported="false" />
+            android:exported="false"
+            tools:ignore="MissingClass" />
+
+        <activity
+            android:name=".PasswordSetupActivity"
+            android:exported="false" />
 
         <activity
             android:name=".PasswordLoginActivity"

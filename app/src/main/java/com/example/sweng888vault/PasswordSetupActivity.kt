@@ -50,7 +50,7 @@ class PasswordSetupActivity : AppCompatActivity() {
 
         Toast.makeText(this, "Password set successfully!", Toast.LENGTH_SHORT).show()
 
-        val intent = Intent(this, MainActivity::class.java) // Assuming MainActivity is the final destination after setup
+        val intent = Intent(this, MainActivity::class.java) // Assuming MainActivity.kt is the final destination after setup
         startActivity(intent)
         finish()
     }
