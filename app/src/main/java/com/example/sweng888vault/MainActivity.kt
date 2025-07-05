@@ -1,5 +1,4 @@
 package com.example.sweng888vault // Ensure this package is correct
-//Testing my commits
 // REMOVED: import androidx.compose.ui.semantics.text
 // R class should be generated in the same package, or ensure correct import if different
 // import com.example.sweng888vault.R
@@ -10,7 +9,10 @@ import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
 import android.util.Log
+import android.view.MenuItem
+import android.view.View
 import android.widget.EditText
+import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
@@ -67,8 +69,9 @@ class MainActivity : AppCompatActivity() {
             showCreateFolderDialog()
         }
 
-        binding.buttonAddFile.setOnClickListener {
-            openFilePicker()
+        //Shows popup menu of adding file from phone or scanning documents
+        binding.buttonAddFile.setOnClickListener { view ->
+           showPopupMenu(view)
         }
 
         // Handle "Up" navigation more broadly with OnBackPressedDispatcher
@@ -84,6 +87,29 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         })
+    }
+
+
+//Handles the PopupMenu when "Add File" is clicked
+    private fun showPopupMenu(view: View) {
+        val popupMenu = PopupMenu(this@MainActivity, view)
+        popupMenu.menuInflater.inflate(R.menu.popup_menu, popupMenu.menu)
+
+        popupMenu.setOnMenuItemClickListener { item: MenuItem ->
+            when (item.itemId) {
+                R.id.addFromPhone -> {
+                    openFilePicker()
+                    true
+                }
+                R.id.scanDocument -> {
+                    //PLACEHOLDER
+                    Toast.makeText(this, "Scan Document selected", Toast.LENGTH_SHORT).show()
+                    true
+                }
+                else -> false
+            }
+        }
+        popupMenu.show()
     }
 
     private fun setupRecyclerView() {
