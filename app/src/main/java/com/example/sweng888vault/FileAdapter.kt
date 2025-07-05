@@ -6,6 +6,7 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.appcompat.widget.PopupMenu
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -13,7 +14,8 @@ import java.io.File
 
 class FileAdapter(
     private val onItemClick: (File) -> Unit,
-    private val onItemDelete: (File) -> Unit // Callback for delete action
+    private val onItemDelete: (File) -> Unit, // Callback for delete action
+    private val onTextToSpeech: (File) -> Unit
 ) : ListAdapter<File, FileAdapter.FileViewHolder>(FileDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FileViewHolder {
@@ -24,16 +26,21 @@ class FileAdapter(
 
     override fun onBindViewHolder(holder: FileViewHolder, position: Int) {
         val file = getItem(position)
-        holder.bind(file, onItemClick, onItemDelete)
+        holder.bind(file, onItemClick, onItemDelete, onTextToSpeech)
     }
 
     class FileViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val icon: ImageView = itemView.findViewById(R.id.fileIcon)
         private val name: TextView = itemView.findViewById(R.id.fileName)
-        private val deleteButton: ImageButton = itemView.findViewById(R.id.deleteButton)
+        private val menuButton: ImageButton = itemView.findViewById(R.id.menuButton)
 
 
-        fun bind(file: File, onItemClick: (File) -> Unit, onItemDelete: (File) -> Unit) {
+        fun bind(
+            file: File,
+            onItemClick: (File) -> Unit,
+            onItemDelete: (File) -> Unit,
+            onTextToSpeech: (File) -> Unit
+        ) {
             name.text = file.name
             if (file.isDirectory) {
                 icon.setImageResource(R.drawable.ic_folder) // Create this drawable
@@ -47,7 +54,29 @@ class FileAdapter(
                 }
             }
             itemView.setOnClickListener { onItemClick(file) }
-            deleteButton.setOnClickListener { onItemDelete(file) }
+            // Show popup menu on menuButton click
+            menuButton.setOnClickListener { view ->
+                val popup = PopupMenu(view.context, view)
+                popup.menuInflater.inflate(R.menu.file_item_menu, popup.menu)
+
+                popup.setOnMenuItemClickListener { item ->
+                    when (item.itemId) {
+                        R.id.menu_delete -> {
+                            onItemDelete(file)
+                            true
+                        }
+
+                        R.id.menu_tts -> {
+                            onTextToSpeech(file)
+                            true
+                        }
+
+                        else -> false
+                    }
+                }
+
+                popup.show()
+            }
         }
     }
 }

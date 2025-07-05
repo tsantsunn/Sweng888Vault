@@ -129,6 +129,10 @@ class MainActivity : AppCompatActivity() {
             },
             onItemDelete = { file ->
                 showDeleteConfirmationDialog(file)
+            },
+            onTextToSpeech = { file ->
+                //PLACEHOLDER
+                Toast.makeText(this, "Text to Speech", Toast.LENGTH_SHORT).show()
             }
         )
         binding.recyclerViewFiles.apply {
