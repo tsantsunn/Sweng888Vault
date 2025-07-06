@@ -64,8 +64,6 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Setup ActionBar (optional, but good for context)
-        // Ensure you have a Toolbar with id 'toolbar' in your activity_main.xml layout
         setSupportActionBar(binding.toolbar)
 
         setupRecyclerView()
@@ -98,7 +96,6 @@ class MainActivity : AppCompatActivity() {
 
 
     }
-
 
     //Handles the PopupMenu when "Add File" is clicked
     private fun showPopupMenu(view: View) {
@@ -366,6 +363,17 @@ class MainActivity : AppCompatActivity() {
         builder.setNegativeButton("Cancel") { dialog, _ -> dialog.cancel() } // Consider using string resources
         builder.show()
     }
+    private fun openTextFileInAppReader(file: File) {
+        if (!file.exists() || !file.canRead() || !file.extension.equals("txt", ignoreCase = true)) {
+            Toast.makeText(this, "Cannot open or not a .txt file.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val intent = Intent(this, TextViewerActivity::class.java).apply {
+            putExtra(TextViewerActivity.EXTRA_FILE_PATH, file.absolutePath)
+            putExtra(TextViewerActivity.EXTRA_FILE_NAME, file.name)
+        }
+        startActivity(intent)
+    }
 
     private fun openFilePicker() {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
@@ -399,6 +407,21 @@ class MainActivity : AppCompatActivity() {
         }
         return fileName?.replace(Regex("[$ILLEGAL_CHARACTERS_FOR_FILENAME]"), "_")
     }
+    private fun showTxtOptionsDialog(file: File) {
+        val options = arrayOf("Open in app reader", "Open with external app", "Read aloud (TTS)")
+        AlertDialog.Builder(this)
+            .setTitle(file.name)
+            .setItems(options) { dialog, which ->
+                when (options[which]) {
+                    "Open in app reader" -> openTextFileInAppReader(file)
+                    "Open with external app" -> openFileWithProvider(file)
+                    "Read aloud (TTS)" -> readTextFromFile(file) // Assuming speakTextFile is defined
+                }
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
 
     private fun openFileWithProvider(file: File) {
         val authority = "${applicationContext.packageName}.fileprovider"
@@ -412,7 +435,7 @@ class MainActivity : AppCompatActivity() {
 
         // Declare mimeType outside the 'apply' block
         val extension = file.extension.lowercase()
-        val resolvedMimeType = MimeTypeUtil.getMimeType(extension) // Renamed to avoid confusion if needed
+        val resolvedMimeType = MimeTypeUtil.getMimeTypeExplicit(file) // Renamed to avoid confusion if needed
 
         val intent = Intent(Intent.ACTION_VIEW).apply {
             setDataAndType(fileUri, resolvedMimeType) // Use the variable declared outside
