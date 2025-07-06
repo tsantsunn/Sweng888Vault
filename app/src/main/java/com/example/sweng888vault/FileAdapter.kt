@@ -15,7 +15,8 @@ import java.io.File
 class FileAdapter(
     private val onItemClick: (File) -> Unit,
     private val onItemDelete: (File) -> Unit, // Callback for delete action
-    private val onTextToSpeech: (File) -> Unit
+    private val onTextToSpeech: (File) -> Unit,
+    private val onMediaPlayer:(File) -> Unit
 ) : ListAdapter<File, FileAdapter.FileViewHolder>(FileDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FileViewHolder {
@@ -26,7 +27,7 @@ class FileAdapter(
 
     override fun onBindViewHolder(holder: FileViewHolder, position: Int) {
         val file = getItem(position)
-        holder.bind(file, onItemClick, onItemDelete, onTextToSpeech)
+        holder.bind(file, onItemClick, onItemDelete, onTextToSpeech, onMediaPlayer)
     }
 
     class FileViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -39,7 +40,8 @@ class FileAdapter(
             file: File,
             onItemClick: (File) -> Unit,
             onItemDelete: (File) -> Unit,
-            onTextToSpeech: (File) -> Unit
+            onTextToSpeech: (File) -> Unit,
+            onMediaPlayer: (File) -> Unit
         ) {
             name.text = file.name
             if (file.isDirectory) {
@@ -59,6 +61,9 @@ class FileAdapter(
                 val popup = PopupMenu(view.context, view)
                 popup.menuInflater.inflate(R.menu.file_item_menu, popup.menu)
 
+                //TODO: Add mp3 if we ever upload mp3s?
+                popup.menu.findItem(R.id.menu_playAudio)?.isVisible = file.extension.lowercase() == "wav"
+
                 popup.setOnMenuItemClickListener { item ->
                     when (item.itemId) {
                         R.id.menu_delete -> {
@@ -71,6 +76,10 @@ class FileAdapter(
                             true
                         }
 
+                        R.id.menu_playAudio -> {
+                            onMediaPlayer(file)
+                            true
+                        }
                         else -> false
                     }
                 }
