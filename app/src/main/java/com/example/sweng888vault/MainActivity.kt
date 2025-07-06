@@ -29,7 +29,9 @@ import com.example.sweng888vault.util.TextToSpeechHelper
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions.DEFAULT_OPTIONS
+import java.io.BufferedReader
 import java.io.File
+import java.io.InputStreamReader
 
 class MainActivity : AppCompatActivity() {
 
@@ -150,6 +152,12 @@ class MainActivity : AppCompatActivity() {
                         //TODO: Need to implement this
                         ttsHelper.speak("PDFs")
                     }
+                    "txt" -> {
+                        readTextFromFile(file)
+                    }
+                    "doc", "docx" -> {
+                        //TODO: Need to implement this
+                    }
                     else -> {
                         Toast.makeText(this, "Unreadable File", Toast.LENGTH_SHORT).show()
                     }
@@ -167,7 +175,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    //TODO: Create Recongnize from files and images
+    /**
+     * Recognize Text from Images
+     */
     private fun recognizeTextFromImage(file: File) {
         val imageBitmap = BitmapFactory.decodeFile(file.absolutePath)
         val image = InputImage.fromBitmap(imageBitmap, 0)
@@ -186,6 +196,23 @@ class MainActivity : AppCompatActivity() {
             .addOnFailureListener { e ->
                 Toast.makeText(this, "Failed to read text: ${e.message}", Toast.LENGTH_SHORT).show()
             }
+    }
+
+    /**
+     * Recognize Text from Text Files
+     */
+    private fun readTextFromFile(file: File) {
+        try {
+            val detectedText = file.readText(Charsets.UTF_8)
+            if (detectedText.isNotBlank()) {
+                showTextDialogAndSpeak(detectedText)
+            } else {
+                Toast.makeText(this, "Text file is empty", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Toast.makeText(this, "Failed to read text file: ${e.message}", Toast.LENGTH_SHORT).show()
+            return
+        }
     }
 
     private fun showAudioPlayer(file: File) {
@@ -234,6 +261,7 @@ class MainActivity : AppCompatActivity() {
                 ttsHelper.speak(text)
             }
 
+            //TODO: Need to be able to save audio while also
             saveAudioButton.setOnClickListener {
                 val folderName = "Saved Audios"
                 val folderExists = FileStorageManager.listItems(this, currentRelativePath)
@@ -252,6 +280,7 @@ class MainActivity : AppCompatActivity() {
                     if (currentRelativePath.isBlank()) folderName else "$currentRelativePath/$folderName"
                 )
 
+                //TODO: Change to save the audio as the files name
                 val audioFile = File(savedAudiosDir, "tts_${System.currentTimeMillis()}.wav")
 
                 ttsHelper.synthesizeToFile(text, audioFile) { success ->
