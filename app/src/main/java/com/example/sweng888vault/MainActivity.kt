@@ -1,5 +1,7 @@
 package com.example.sweng888vault // Ensure this package is correct
-
+// REMOVED: import androidx.compose.ui.semantics.text
+// R class should be generated in the same package, or ensure correct import if different
+// import com.example.sweng888vault.R
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
@@ -14,7 +16,6 @@ import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
@@ -27,10 +28,9 @@ class MainActivity : AppCompatActivity() {
 
     // View Binding variable
     private lateinit var binding: ActivityMainBinding
+
     private lateinit var fileAdapter: FileAdapter
     private var currentRelativePath: String = ""
-    private val viewModel: MainViewModel by viewModels()
-
 
     private val filePickerLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -53,8 +53,12 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Inflate the layout using View Binding
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        // Setup ActionBar (optional, but good for context)
+        // Ensure you have a Toolbar with id 'toolbar' in your activity_main.xml layout
         setSupportActionBar(binding.toolbar)
 
         setupRecyclerView()
@@ -76,22 +80,16 @@ class MainActivity : AppCompatActivity() {
                 if (currentRelativePath.isNotEmpty()) {
                     navigateUpInFileSystem()
                 } else {
-                    viewModel.stopSpeaking()
+                    // If already at root, allow default back press behavior (e.g., exit activity)
                     isEnabled = false // Disable this callback
                     onBackPressedDispatcher.onBackPressed() // Trigger default behavior
                     isEnabled = true // Re-enable for next time (if activity is not finished)
                 }
             }
         })
-        viewModel.ttsStatus.observe(this) { message ->
-            Log.i("MainActivity_TTS_Status", message)
-        }
-        viewModel.showToast.observe(this) { event ->
-            event.getContentIfNotHandled()?.let { message ->
-                Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-            }
-        }
     }
+
+
 //Handles the PopupMenu when "Add File" is clicked
     private fun showPopupMenu(view: View) {
         val popupMenu = PopupMenu(this@MainActivity, view)
@@ -133,13 +131,15 @@ class MainActivity : AppCompatActivity() {
                 showDeleteConfirmationDialog(file)
             },
             onTextToSpeech = { file ->
-                viewModel.speakFileContent(file)
+                //PLACEHOLDER
                 Toast.makeText(this, "Text to Speech", Toast.LENGTH_SHORT).show()
             }
         )
         binding.recyclerViewFiles.apply {
             layoutManager = LinearLayoutManager(this@MainActivity)
             adapter = fileAdapter
+            // Optional: Add item decoration for dividers
+            // addItemDecoration(DividerItemDecoration(this@MainActivity, LinearLayoutManager.VERTICAL))
         }
     }
 
@@ -291,41 +291,7 @@ class MainActivity : AppCompatActivity() {
             .setIcon(android.R.drawable.ic_dialog_alert)
             .show()
     }
-    /*
-    val fileToShare = File(filesDir, "UserContent/sherlock.txt")
-    private fun shareFile() {
-        if (fileToShare.exists()) {
-            val authority =
-                "${applicationContext.packageName}.fileprovider" // Or your defined authority
-            try {
-                val contentUri: Uri = FileProvider.getUriForFile(
-                    this,       // Context
-                    authority,  // Authority defined in AndroidManifest.xml
-                    fileToShare // The File object
-                )
 
-                // Now use contentUri, for example, in an Intent
-                val viewIntent = Intent(Intent.ACTION_VIEW).apply {
-                    setDataAndType(contentUri, "application/pdf") // Set appropriate MIME type
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
-                startActivity(viewIntent)
-
-            } catch (e: IllegalArgumentException) {
-                Log.e("FileProvider", "URI generation failed", e)
-            }
-        }else{
-            Toast.makeText(this, "File not found", Toast.LENGTH_SHORT).show()
-        }
-    }
-     */
-
-    override fun onStop(){
-        super.onStop()
-    }
-    override fun onDestroy(){
-        super.onDestroy()
-    }
     companion object {
         private const val ILLEGAL_CHARACTERS_FOR_FILENAME = "/\\:*?\"<>|"
     }
