@@ -4,5 +4,9 @@
     <files-path
         name="user_content"
         path="UserContent/" />
+    <files-path
+        name="all_paths"
+        path="*"/>
+"
     <!-- You can add other paths here if needed, like cache-path or external-files-path -->
 </paths>
