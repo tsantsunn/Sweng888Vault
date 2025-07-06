@@ -45,14 +45,14 @@ class FileAdapter(
         ) {
             name.text = file.name
             if (file.isDirectory) {
-                icon.setImageResource(R.drawable.ic_folder) // Create this drawable
+                icon.setImageResource(R.drawable.folder) // Create this drawable
             } else {
                 // Set icons based on file type (pdf, image, video etc.)
                 when (file.extension.lowercase()) {
-                    "pdf" -> icon.setImageResource(R.drawable.ic_pdf) // Create this
-                    "jpg", "jpeg", "png" -> icon.setImageResource(R.drawable.ic_image) // Create this
-                    "mp4", "mov", "avi" -> icon.setImageResource(R.drawable.ic_video) // Create this
-                    else -> icon.setImageResource(R.drawable.ic_file) // Generic file icon
+                    "pdf" -> icon.setImageResource(R.drawable.pdfico) // Create this
+                    "jpg", "jpeg", "png" -> icon.setImageResource(R.drawable.imageico) // Create this
+                    "mp4", "mov", "avi" -> icon.setImageResource(R.drawable.videoico) // Create this
+                    else -> icon.setImageResource(R.drawable.fileico) // Generic file icon
                 }
             }
             itemView.setOnClickListener { onItemClick(file) }
