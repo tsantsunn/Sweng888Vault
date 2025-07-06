@@ -1,4 +1,4 @@
-package com.example.sweng888vault // Ensure this package is correct
+package com.example.sweng888vault
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
@@ -21,6 +21,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.sweng888vault.databinding.ActivityMainBinding
+import com.example.sweng888vault.util.MimeTypeUtil
 import com.example.sweng888vault.util.FileStorageManager
 import com.example.sweng888vault.util.MediaManager
 import com.example.sweng888vault.util.TextToSpeechHelper
@@ -77,7 +78,7 @@ class MainActivity : AppCompatActivity() {
 
         //Shows popup menu of adding file from phone or scanning documents
         binding.buttonAddFile.setOnClickListener { view ->
-           showPopupMenu(view)
+            showPopupMenu(view)
         }
 
         // Handle "Up" navigation more broadly with OnBackPressedDispatcher
@@ -99,7 +100,7 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-//Handles the PopupMenu when "Add File" is clicked
+    //Handles the PopupMenu when "Add File" is clicked
     private fun showPopupMenu(view: View) {
         val popupMenu = PopupMenu(this@MainActivity, view)
         popupMenu.menuInflater.inflate(R.menu.popup_menu, popupMenu.menu)
@@ -148,6 +149,12 @@ class MainActivity : AppCompatActivity() {
                         //TODO: Need to implement this
                         ttsHelper.speak("PDFs")
                     }
+                    "txt" -> {
+                        readTextFromFile(file)
+                    }
+                    "doc", "docx" -> {
+                        //TODO: Need to implement this
+                    }
                     else -> {
                         Toast.makeText(this, "Unreadable File", Toast.LENGTH_SHORT).show()
                     }
@@ -165,7 +172,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    //TODO: Create Recongnize from files and images
+    /**
+     * Recognize Text from Images
+     */
     private fun recognizeTextFromImage(file: File) {
         val imageBitmap = BitmapFactory.decodeFile(file.absolutePath)
         val image = InputImage.fromBitmap(imageBitmap, 0)
@@ -184,6 +193,23 @@ class MainActivity : AppCompatActivity() {
             .addOnFailureListener { e ->
                 Toast.makeText(this, "Failed to read text: ${e.message}", Toast.LENGTH_SHORT).show()
             }
+    }
+
+    /**
+     * Recognize Text from Text Files
+     */
+    private fun readTextFromFile(file: File) {
+        try {
+            val detectedText = file.readText(Charsets.UTF_8)
+            if (detectedText.isNotBlank()) {
+                showTextDialogAndSpeak(detectedText)
+            } else {
+                Toast.makeText(this, "Text file is empty", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Toast.makeText(this, "Failed to read text file: ${e.message}", Toast.LENGTH_SHORT).show()
+            return
+        }
     }
 
     private fun showAudioPlayer(file: File) {
@@ -232,6 +258,7 @@ class MainActivity : AppCompatActivity() {
             ttsHelper.speak(text)
         }
 
+        //TODO: Need to be able to save audio while also
         saveAudioButton.setOnClickListener {
             val folderName = "Saved Audios"
             val folderExists = FileStorageManager.listItems(this, currentRelativePath)
@@ -250,6 +277,7 @@ class MainActivity : AppCompatActivity() {
                 if (currentRelativePath.isBlank()) folderName else "$currentRelativePath/$folderName"
             )
 
+            //TODO: Change to save the audio as the files name
             val audioFile = File(savedAudiosDir, "tts_${System.currentTimeMillis()}.wav")
 
             ttsHelper.synthesizeToFile(text, audioFile) { success ->
@@ -280,7 +308,7 @@ class MainActivity : AppCompatActivity() {
         if (currentRelativePath.isEmpty()) {
             supportActionBar?.setDisplayHomeAsUpEnabled(false)
             // It's good practice to use string resources for titles
-            supportActionBar?.title = getString(com.example.sweng888vault.R.string.app_name) // Or a specific title like "My Vault"
+            supportActionBar?.title = getString(R.string.app_name) // Or a specific title like "My Vault"
         } else {
             supportActionBar?.setDisplayHomeAsUpEnabled(true)
             val currentFolderName = currentRelativePath.substringAfterLast(File.separatorChar, currentRelativePath)
@@ -422,32 +450,5 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val ILLEGAL_CHARACTERS_FOR_FILENAME = "/\\:*?\"<>|"
-    }
-}
-
-// Optional: Create a MimeTypeUtil.kt for better MIME type handling
-object MimeTypeUtil {
-    fun getMimeType(extension: String): String {
-        return when (extension.lowercase()) {
-            "pdf" -> "application/pdf"
-            "jpg", "jpeg" -> "image/jpeg"
-            "png" -> "image/png"
-            "gif" -> "image/gif"
-            "mp4" -> "video/mp4"
-            "3gp" -> "video/3gpp"
-            "mkv" -> "video/x-matroska"
-            "webm" -> "video/webm"
-            "txt" -> "text/plain"
-            "doc" -> "application/msword"
-            "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            "xls" -> "application/vnd.ms-excel"
-            "xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            "ppt" -> "application/vnd.ms-powerpoint"
-            "pptx" -> "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-            "zip" -> "application/zip"
-            "rar" -> "application/x-rar-compressed"
-            // Add more as needed
-            else -> "*/*" // Generic fallback
-        }
     }
 }
