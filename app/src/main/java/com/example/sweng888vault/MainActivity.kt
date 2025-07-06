@@ -208,8 +208,17 @@ class MainActivity : AppCompatActivity() {
 
             val neutralButton = dialog.getButton(AlertDialog.BUTTON_NEUTRAL)
             neutralButton.setOnClickListener {
-                //TODO: check if saved audios folder is created, if not create then save audio into tahat
-                ttsHelper.speak("SAVING")
+                val folderAlreadyExists = FileStorageManager.listItems(this, currentRelativePath)
+                    .any { it.isDirectory && it.name.equals("Saved Audios", ignoreCase = true) }
+                //Save audio in already existing "Saved Audios" folder
+                if (folderAlreadyExists) {
+                    Toast.makeText(this, "'Saved Audios' folder already exists", Toast.LENGTH_SHORT).show()
+                    ttsHelper.speak("Saved Audios folder already exists")
+                } else { //If there is not a "Saved Audios" folder, create one, and then save the audio in here
+                    FileStorageManager.createFolder(this, "Saved Audios", currentRelativePath)
+                    loadFilesAndFolders() // Update UI
+                    ttsHelper.speak("Saved Audios folder created")
+                }
             }
         }
         dialog.show()
