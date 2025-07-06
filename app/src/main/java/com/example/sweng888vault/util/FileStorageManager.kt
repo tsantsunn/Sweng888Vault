@@ -16,7 +16,7 @@ object FileStorageManager {
      * Gets the root directory for storing user content within the app's internal storage.
      * Creates it if it doesn't exist.
      */
-    private fun getRootContentDirectory(context: Context): File {
+    fun getRootContentDirectory(context: Context): File {
         val rootDir = File(context.filesDir, ROOT_DIRECTORY_NAME)
         if (!rootDir.exists()) {
             rootDir.mkdirs()

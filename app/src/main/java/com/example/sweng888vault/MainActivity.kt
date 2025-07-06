@@ -2,17 +2,19 @@ package com.example.sweng888vault // Ensure this package is correct
 // REMOVED: import androidx.compose.ui.semantics.text
 // R class should be generated in the same package, or ensure correct import if different
 // import com.example.sweng888vault.R
-import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
 import android.util.Log
 import android.view.MenuItem
 import android.view.View
+import android.widget.Button
 import android.widget.EditText
 import android.widget.PopupMenu
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
@@ -22,6 +24,11 @@ import androidx.core.content.FileProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.sweng888vault.databinding.ActivityMainBinding
 import com.example.sweng888vault.util.FileStorageManager
+import com.example.sweng888vault.util.MediaManager
+import com.example.sweng888vault.util.TextToSpeechHelper
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions.DEFAULT_OPTIONS
 import java.io.File
 
 class MainActivity : AppCompatActivity() {
@@ -31,10 +38,11 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var fileAdapter: FileAdapter
     private var currentRelativePath: String = ""
+    private lateinit var ttsHelper: TextToSpeechHelper
 
     private val filePickerLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == Activity.RESULT_OK) {
+            if (result.resultCode == RESULT_OK) {
                 result.data?.data?.let { uri ->
                     val fileName = getFileNameFromUri(uri)
                     if (fileName != null) {
@@ -87,6 +95,9 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         })
+        ttsHelper = TextToSpeechHelper(this)
+
+
     }
 
 
@@ -131,8 +142,21 @@ class MainActivity : AppCompatActivity() {
                 showDeleteConfirmationDialog(file)
             },
             onTextToSpeech = { file ->
-                //PLACEHOLDER
-                Toast.makeText(this, "Text to Speech", Toast.LENGTH_SHORT).show()
+                when (file.extension.lowercase()) {
+                    "jpg", "jpeg", "png" -> {
+                        recognizeTextFromImage(file)
+                    }
+                    "pdf" -> {
+                        //TODO: Need to implement this
+                        ttsHelper.speak("PDFs")
+                    }
+                    else -> {
+                        Toast.makeText(this, "Unreadable File", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            },
+            onMediaPlayer = { file ->
+                showAudioPlayer(file)
             }
         )
         binding.recyclerViewFiles.apply {
@@ -141,6 +165,110 @@ class MainActivity : AppCompatActivity() {
             // Optional: Add item decoration for dividers
             // addItemDecoration(DividerItemDecoration(this@MainActivity, LinearLayoutManager.VERTICAL))
         }
+    }
+
+    //TODO: Create Recongnize from files and images
+    private fun recognizeTextFromImage(file: File) {
+        val imageBitmap = BitmapFactory.decodeFile(file.absolutePath)
+        val image = InputImage.fromBitmap(imageBitmap, 0)
+
+        val recognizer = TextRecognition.getClient(DEFAULT_OPTIONS)
+
+        recognizer.process(image)
+            .addOnSuccessListener { visionText ->
+                val detectedText = visionText.text
+                if (detectedText.isNotBlank()) {
+                    showTextDialogAndSpeak(detectedText)
+                } else {
+                    Toast.makeText(this, "No text found in image", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "Failed to read text: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun showAudioPlayer(file: File) {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_audio_player, null)
+        val playButton = dialogView.findViewById<Button>(R.id.buttonPlay)
+        val pauseButton = dialogView.findViewById<Button>(R.id.buttonPause)
+        val closeButton = dialogView.findViewById<Button>(R.id.buttonClose)
+
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Audio Player")
+            .setView(dialogView)
+            .setCancelable(false) // User can't close the player if they click outside
+            .create()
+
+        playButton.setOnClickListener {
+            MediaManager.playAudio(this, file)
+        }
+
+        pauseButton.setOnClickListener {
+            MediaManager.pauseAudio()
+        }
+
+        closeButton.setOnClickListener {
+            MediaManager.stopAudio()
+            dialog.dismiss()
+        }
+        dialog.show()
+    }
+
+    private fun showTextDialogAndSpeak(text: String) {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_text_display, null)
+        val textView = dialogView.findViewById<TextView>(R.id.dialogTextView)
+        val readTextButton = dialogView.findViewById<Button>(R.id.buttonReadText)
+        val saveAudioButton = dialogView.findViewById<Button>(R.id.buttonSaveAudio)
+        val closeButton = dialogView.findViewById<Button>(R.id.buttonClose)
+        textView.text = text
+
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Recognized Text")
+            .setCancelable(false) // User can't close the player if they click outside
+            .create()
+
+            readTextButton.setOnClickListener {
+                ttsHelper.speak(text)
+            }
+
+            saveAudioButton.setOnClickListener {
+                val folderName = "Saved Audios"
+                val folderExists = FileStorageManager.listItems(this, currentRelativePath)
+                    .any { it.isDirectory && it.name.equals(folderName, ignoreCase = true) }
+
+                if (!folderExists) {
+                    val created = FileStorageManager.createFolder(this, folderName, currentRelativePath)
+                    if (!created) {
+                        Log.e("MainActivity", "Could not create Saved Audios Folder")
+                        return@setOnClickListener
+                    }
+                    loadFilesAndFolders()
+                }
+
+                val savedAudiosDir = File(FileStorageManager.getRootContentDirectory(this),
+                    if (currentRelativePath.isBlank()) folderName else "$currentRelativePath/$folderName"
+                )
+
+                val audioFile = File(savedAudiosDir, "tts_${System.currentTimeMillis()}.wav")
+
+                ttsHelper.synthesizeToFile(text, audioFile) { success ->
+                    runOnUiThread {
+                        if (success) {
+                            Toast.makeText(this, "Audio saved: ${audioFile.name}", Toast.LENGTH_LONG).show()
+                            loadFilesAndFolders()
+                        } else {
+                            Toast.makeText(this, "Failed to save audio", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            }
+
+            closeButton.setOnClickListener {
+                ttsHelper.stop()
+                dialog.dismiss()
+            }
+        dialog.show()
     }
 
     private fun loadFilesAndFolders() {
@@ -152,7 +280,7 @@ class MainActivity : AppCompatActivity() {
         if (currentRelativePath.isEmpty()) {
             supportActionBar?.setDisplayHomeAsUpEnabled(false)
             // It's good practice to use string resources for titles
-            supportActionBar?.title = getString(com.example.sweng888vault.R.string.app_name) // Or a specific title like "My Vault"
+            supportActionBar?.title = getString(R.string.app_name) // Or a specific title like "My Vault"
         } else {
             supportActionBar?.setDisplayHomeAsUpEnabled(true)
             val currentFolderName = currentRelativePath.substringAfterLast(File.separatorChar, currentRelativePath)
