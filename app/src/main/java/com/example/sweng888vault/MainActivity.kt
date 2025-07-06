@@ -77,7 +77,7 @@ class MainActivity : AppCompatActivity() {
 
         //Shows popup menu of adding file from phone or scanning documents
         binding.buttonAddFile.setOnClickListener { view ->
-            showPopupMenu(view)
+           showPopupMenu(view)
         }
 
         // Handle "Up" navigation more broadly with OnBackPressedDispatcher
@@ -99,7 +99,7 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    //Handles the PopupMenu when "Add File" is clicked
+//Handles the PopupMenu when "Add File" is clicked
     private fun showPopupMenu(view: View) {
         val popupMenu = PopupMenu(this@MainActivity, view)
         popupMenu.menuInflater.inflate(R.menu.popup_menu, popupMenu.menu)
@@ -278,7 +278,7 @@ class MainActivity : AppCompatActivity() {
         if (currentRelativePath.isEmpty()) {
             supportActionBar?.setDisplayHomeAsUpEnabled(false)
             // It's good practice to use string resources for titles
-            supportActionBar?.title = getString(R.string.app_name) // Or a specific title like "My Vault"
+            supportActionBar?.title = getString(com.example.sweng888vault.R.string.app_name) // Or a specific title like "My Vault"
         } else {
             supportActionBar?.setDisplayHomeAsUpEnabled(true)
             val currentFolderName = currentRelativePath.substringAfterLast(File.separatorChar, currentRelativePath)
