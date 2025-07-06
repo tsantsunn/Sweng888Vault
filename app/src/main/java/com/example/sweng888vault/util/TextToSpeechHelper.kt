@@ -1,11 +1,11 @@
 package com.example.sweng888vault.util
 
 import android.content.Context
+import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.util.Log
 import android.widget.Toast
 import java.io.File
-import java.io.FileInputStream
 import java.util.*
 
 class TextToSpeechHelper(private val context: Context) : TextToSpeech.OnInitListener {
@@ -47,5 +47,31 @@ class TextToSpeechHelper(private val context: Context) : TextToSpeech.OnInitList
         tts?.stop()
     }
 
+    fun synthesizeToFile(text: String, file: File, onComplete: (Boolean) -> Unit) {
+        if (!isReady) {
+            Log.e("TTS", "TTS not initialized or not ready")
+            onComplete(false)
+            return
+        }
 
+        val params = Bundle()
+        val utteranceId = System.currentTimeMillis().toString()
+
+        tts?.setOnUtteranceProgressListener(object : android.speech.tts.UtteranceProgressListener() {
+            override fun onStart(utteranceId: String) {}
+            override fun onDone(utteranceId: String) {
+                onComplete(true)
+            }
+
+            override fun onError(utteranceId: String) {
+                onComplete(false)
+            }
+        })
+
+        val result = tts?.synthesizeToFile(text, params, file, utteranceId)
+        if (result != TextToSpeech.SUCCESS) {
+            Log.e("TTS", "synthesizeToFile failed")
+            onComplete(false)
+        }
+    }
 }
