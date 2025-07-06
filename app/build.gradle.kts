@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.example.sweng888vault"
-    compileSdk = 36
+    compileSdk = 35
     buildFeatures {
         viewBinding = true
     }
@@ -13,7 +13,6 @@ android {
     defaultConfig {
         applicationId = "com.example.sweng888vault"
         minSdk = 24
-        //noinspection OldTargetApi
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -40,8 +39,6 @@ android {
 }
 
 dependencies {
-    implementation(libs.androidx.lifecycle.viewmodel.ktx) // Or the latest version
-    implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
