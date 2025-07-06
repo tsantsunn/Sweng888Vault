@@ -202,6 +202,7 @@ class MainActivity : AppCompatActivity() {
 
         playButton.setOnClickListener {
             MediaManager.playAudio(this, file)
+            Log.i("MainActivity", "Playing audio")
         }
 
         pauseButton.setOnClickListener {
@@ -226,6 +227,7 @@ class MainActivity : AppCompatActivity() {
         val dialog = AlertDialog.Builder(this)
             .setTitle("Recognized Text")
             .setCancelable(false) // User can't close the player if they click outside
+            .setView(dialogView)
             .create()
 
             readTextButton.setOnClickListener {
