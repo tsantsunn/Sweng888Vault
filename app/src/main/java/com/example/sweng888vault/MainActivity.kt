@@ -1,7 +1,5 @@
-package com.example.sweng888vault // Ensure this package is correct
-// REMOVED: import androidx.compose.ui.semantics.text
-// R class should be generated in the same package, or ensure correct import if different
-// import com.example.sweng888vault.R
+package com.example.sweng888vault
+
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.graphics.BitmapFactory
@@ -23,15 +21,14 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.sweng888vault.databinding.ActivityMainBinding
+import com.example.sweng888vault.util.MimeTypeUtil
 import com.example.sweng888vault.util.FileStorageManager
 import com.example.sweng888vault.util.MediaManager
 import com.example.sweng888vault.util.TextToSpeechHelper
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions.DEFAULT_OPTIONS
-import java.io.BufferedReader
 import java.io.File
-import java.io.InputStreamReader
 
 class MainActivity : AppCompatActivity() {
 
@@ -67,8 +64,6 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Setup ActionBar (optional, but good for context)
-        // Ensure you have a Toolbar with id 'toolbar' in your activity_main.xml layout
         setSupportActionBar(binding.toolbar)
 
         setupRecyclerView()
@@ -81,7 +76,7 @@ class MainActivity : AppCompatActivity() {
 
         //Shows popup menu of adding file from phone or scanning documents
         binding.buttonAddFile.setOnClickListener { view ->
-           showPopupMenu(view)
+            showPopupMenu(view)
         }
 
         // Handle "Up" navigation more broadly with OnBackPressedDispatcher
@@ -102,8 +97,7 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-
-//Handles the PopupMenu when "Add File" is clicked
+    //Handles the PopupMenu when "Add File" is clicked
     private fun showPopupMenu(view: View) {
         val popupMenu = PopupMenu(this@MainActivity, view)
         popupMenu.menuInflater.inflate(R.menu.popup_menu, popupMenu.menu)
@@ -257,48 +251,48 @@ class MainActivity : AppCompatActivity() {
             .setView(dialogView)
             .create()
 
-            readTextButton.setOnClickListener {
-                ttsHelper.speak(text)
-            }
+        readTextButton.setOnClickListener {
+            ttsHelper.speak(text)
+        }
 
-            //TODO: Need to be able to save audio while also
-            saveAudioButton.setOnClickListener {
-                val folderName = "Saved Audios"
-                val folderExists = FileStorageManager.listItems(this, currentRelativePath)
-                    .any { it.isDirectory && it.name.equals(folderName, ignoreCase = true) }
+        //TODO: Need to be able to save audio while also
+        saveAudioButton.setOnClickListener {
+            val folderName = "Saved Audios"
+            val folderExists = FileStorageManager.listItems(this, currentRelativePath)
+                .any { it.isDirectory && it.name.equals(folderName, ignoreCase = true) }
 
-                if (!folderExists) {
-                    val created = FileStorageManager.createFolder(this, folderName, currentRelativePath)
-                    if (!created) {
-                        Log.e("MainActivity", "Could not create Saved Audios Folder")
-                        return@setOnClickListener
-                    }
-                    loadFilesAndFolders()
+            if (!folderExists) {
+                val created = FileStorageManager.createFolder(this, folderName, currentRelativePath)
+                if (!created) {
+                    Log.e("MainActivity", "Could not create Saved Audios Folder")
+                    return@setOnClickListener
                 }
+                loadFilesAndFolders()
+            }
 
-                val savedAudiosDir = File(FileStorageManager.getRootContentDirectory(this),
-                    if (currentRelativePath.isBlank()) folderName else "$currentRelativePath/$folderName"
-                )
+            val savedAudiosDir = File(FileStorageManager.getRootContentDirectory(this),
+                if (currentRelativePath.isBlank()) folderName else "$currentRelativePath/$folderName"
+            )
 
-                //TODO: Change to save the audio as the files name
-                val audioFile = File(savedAudiosDir, "tts_${System.currentTimeMillis()}.wav")
+            //TODO: Change to save the audio as the files name
+            val audioFile = File(savedAudiosDir, "tts_${System.currentTimeMillis()}.wav")
 
-                ttsHelper.synthesizeToFile(text, audioFile) { success ->
-                    runOnUiThread {
-                        if (success) {
-                            Toast.makeText(this, "Audio saved: ${audioFile.name}", Toast.LENGTH_LONG).show()
-                            loadFilesAndFolders()
-                        } else {
-                            Toast.makeText(this, "Failed to save audio", Toast.LENGTH_SHORT).show()
-                        }
+            ttsHelper.synthesizeToFile(text, audioFile) { success ->
+                runOnUiThread {
+                    if (success) {
+                        Toast.makeText(this, "Audio saved: ${audioFile.name}", Toast.LENGTH_LONG).show()
+                        loadFilesAndFolders()
+                    } else {
+                        Toast.makeText(this, "Failed to save audio", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
+        }
 
-            closeButton.setOnClickListener {
-                ttsHelper.stop()
-                dialog.dismiss()
-            }
+        closeButton.setOnClickListener {
+            ttsHelper.stop()
+            dialog.dismiss()
+        }
         dialog.show()
     }
 
@@ -369,6 +363,17 @@ class MainActivity : AppCompatActivity() {
         builder.setNegativeButton("Cancel") { dialog, _ -> dialog.cancel() } // Consider using string resources
         builder.show()
     }
+    private fun openTextFileInAppReader(file: File) {
+        if (!file.exists() || !file.canRead() || !file.extension.equals("txt", ignoreCase = true)) {
+            Toast.makeText(this, "Cannot open or not a .txt file.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val intent = Intent(this, TextViewerActivity::class.java).apply {
+            putExtra(TextViewerActivity.EXTRA_FILE_PATH, file.absolutePath)
+            putExtra(TextViewerActivity.EXTRA_FILE_NAME, file.name)
+        }
+        startActivity(intent)
+    }
 
     private fun openFilePicker() {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
@@ -402,6 +407,21 @@ class MainActivity : AppCompatActivity() {
         }
         return fileName?.replace(Regex("[$ILLEGAL_CHARACTERS_FOR_FILENAME]"), "_")
     }
+    private fun showTxtOptionsDialog(file: File) {
+        val options = arrayOf("Open in app reader", "Open with external app", "Read aloud (TTS)")
+        AlertDialog.Builder(this)
+            .setTitle(file.name)
+            .setItems(options) { dialog, which ->
+                when (options[which]) {
+                    "Open in app reader" -> openTextFileInAppReader(file)
+                    "Open with external app" -> openFileWithProvider(file)
+                    "Read aloud (TTS)" -> readTextFromFile(file) // Assuming speakTextFile is defined
+                }
+                dialog.dismiss()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
 
     private fun openFileWithProvider(file: File) {
         val authority = "${applicationContext.packageName}.fileprovider"
@@ -415,7 +435,7 @@ class MainActivity : AppCompatActivity() {
 
         // Declare mimeType outside the 'apply' block
         val extension = file.extension.lowercase()
-        val resolvedMimeType = MimeTypeUtil.getMimeType(extension) // Renamed to avoid confusion if needed
+        val resolvedMimeType = MimeTypeUtil.getMimeTypeExplicit(file) // Renamed to avoid confusion if needed
 
         val intent = Intent(Intent.ACTION_VIEW).apply {
             setDataAndType(fileUri, resolvedMimeType) // Use the variable declared outside
@@ -453,32 +473,5 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val ILLEGAL_CHARACTERS_FOR_FILENAME = "/\\:*?\"<>|"
-    }
-}
-
-// Optional: Create a MimeTypeUtil.kt for better MIME type handling
-object MimeTypeUtil {
-    fun getMimeType(extension: String): String {
-        return when (extension.lowercase()) {
-            "pdf" -> "application/pdf"
-            "jpg", "jpeg" -> "image/jpeg"
-            "png" -> "image/png"
-            "gif" -> "image/gif"
-            "mp4" -> "video/mp4"
-            "3gp" -> "video/3gpp"
-            "mkv" -> "video/x-matroska"
-            "webm" -> "video/webm"
-            "txt" -> "text/plain"
-            "doc" -> "application/msword"
-            "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            "xls" -> "application/vnd.ms-excel"
-            "xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            "ppt" -> "application/vnd.ms-powerpoint"
-            "pptx" -> "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-            "zip" -> "application/zip"
-            "rar" -> "application/x-rar-compressed"
-            // Add more as needed
-            else -> "*/*" // Generic fallback
-        }
     }
 }
