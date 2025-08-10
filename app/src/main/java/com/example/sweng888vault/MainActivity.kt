@@ -327,10 +327,6 @@ class MainActivity : AppCompatActivity() {
                 loadFilesAndFolders()
             }
 
-            val savedAudiosDir = File(FileStorageManager.getRootContentDirectory(this),
-                if (currentRelativePath.isBlank()) folderName else "$currentRelativePath/$folderName"
-            )
-
             ttsHelper.synthesizeToFile(text, fileName) { files ->
                 runOnUiThread {
                     if (files != null && files.isNotEmpty()) {
@@ -461,6 +457,7 @@ class MainActivity : AppCompatActivity() {
         }
         return fileName?.replace(Regex("[$ILLEGAL_CHARACTERS_FOR_FILENAME]"), "_")
     }
+
     private fun showTxtOptionsDialog(file: File) {
         val options = arrayOf("Open in app reader", "Open with external app", "Read aloud (TTS)")
         AlertDialog.Builder(this)
