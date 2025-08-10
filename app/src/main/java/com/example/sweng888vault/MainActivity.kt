@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
+import android.text.Html
 import android.util.Log
 import android.view.MenuItem
 import android.view.View
@@ -30,7 +31,12 @@ import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions.DEFAULT_OPTIONS
 import com.tom_roush.pdfbox.pdmodel.PDDocument
 import com.tom_roush.pdfbox.text.PDFTextStripper
+import nl.siegmann.epublib.epub.EpubReader
+import org.apache.poi.hwpf.HWPFDocument
+import org.apache.poi.hwpf.extractor.WordExtractor
+import org.apache.poi.xwpf.usermodel.XWPFDocument
 import java.io.File
+import java.io.FileInputStream
 
 class MainActivity : AppCompatActivity() {
 
@@ -149,7 +155,10 @@ class MainActivity : AppCompatActivity() {
                         readTextFromFile(file)
                     }
                     "doc", "docx" -> {
-                        //TODO: Need to implement this
+                        readTextFromWord(file)
+                    }
+                    "epub" -> {
+                        readTextFromEpub(file)
                     }
                     else -> {
                         Toast.makeText(this, "Unreadable File", Toast.LENGTH_SHORT).show()
@@ -191,6 +200,34 @@ class MainActivity : AppCompatActivity() {
             }
     }
 
+    private fun readTextFromEpub(file: File) {
+        try {
+            val book = EpubReader().readEpub(FileInputStream(file))
+            val content = StringBuilder()
+
+            for (resource in book.resources.all) {
+                val href = resource.href.lowercase()
+                if (href.endsWith(".html") || href.endsWith(".xhtml") || href.endsWith(".htm")) {
+                    val html = resource.reader.readText()
+                    val plainText = Html.fromHtml(html, Html.FROM_HTML_MODE_LEGACY).toString()
+                    content.append(plainText).append("\n\n")
+                }
+            }
+
+            val finalText = content.toString().trim()
+
+            if (finalText.isNotBlank()) {
+                showTextDialogAndSpeak(finalText)
+                Toast.makeText(this, "EPUB text extracted successfully", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "No readable text found in EPUB", Toast.LENGTH_LONG).show()
+            }
+
+        } catch (e: Exception) {
+            Toast.makeText(this, "Failed to read EPUB file: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     /**
      * Recognize Text from Text Files
      */
@@ -207,6 +244,41 @@ class MainActivity : AppCompatActivity() {
             return
         }
     }
+    private fun readTextFromWord(file: File) {
+        try {
+            val text = when {
+                file.extension.equals("docx", ignoreCase = true) -> {
+                    FileInputStream(file).use { fis ->
+                        val docx = XWPFDocument(fis)
+                        docx.paragraphs.joinToString("\n") { it.text }
+                    }
+                }
+
+                file.extension.equals("doc", ignoreCase = true) -> {
+                    FileInputStream(file).use { fis ->
+                        val doc = HWPFDocument(fis)
+                        WordExtractor(doc).text
+                    }
+                }
+
+                else -> {
+                    Toast.makeText(this, "Unsupported file format", Toast.LENGTH_SHORT).show()
+                    return
+                }
+            }
+
+            if (text.isNotBlank()) {
+                showTextDialogAndSpeak(text)
+                Toast.makeText(this, "Word document text extracted successfully", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "No text found in Word document", Toast.LENGTH_LONG).show()
+            }
+
+        } catch (e: Exception) {
+            Toast.makeText(this, "Failed to read Word file: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
 
     /**
      * Read from PDF
