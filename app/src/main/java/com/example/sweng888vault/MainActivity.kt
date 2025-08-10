@@ -81,9 +81,8 @@ class MainActivity : AppCompatActivity() {
             showCreateFolderDialog()
         }
 
-        //Shows popup menu of adding file from phone or scanning documents
         binding.buttonAddFile.setOnClickListener { view ->
-            showPopupMenu(view)
+            openFilePicker()
         }
 
         // Handle "Up" navigation more broadly with OnBackPressedDispatcher
@@ -100,28 +99,6 @@ class MainActivity : AppCompatActivity() {
             }
         })
         ttsHelper = TextToSpeechHelper(this)
-    }
-
-    //Handles the PopupMenu when "Add File" is clicked
-    private fun showPopupMenu(view: View) {
-        val popupMenu = PopupMenu(this@MainActivity, view)
-        popupMenu.menuInflater.inflate(R.menu.popup_menu, popupMenu.menu)
-
-        popupMenu.setOnMenuItemClickListener { item: MenuItem ->
-            when (item.itemId) {
-                R.id.addFromPhone -> {
-                    openFilePicker()
-                    true
-                }
-                R.id.scanDocument -> {
-                    //PLACEHOLDER
-                    Toast.makeText(this, "Scan Document selected", Toast.LENGTH_SHORT).show()
-                    true
-                }
-                else -> false
-            }
-        }
-        popupMenu.show()
     }
 
     private fun setupRecyclerView() {
@@ -312,7 +289,6 @@ class MainActivity : AppCompatActivity() {
             ttsHelper.speak(text)
         }
 
-        //TODO: Need to be able to save audio while also
         saveAudioButton.setOnClickListener {
             val folderName = "Saved Audios"
             val folderExists = FileStorageManager.listItems(this, currentRelativePath)
