@@ -190,7 +190,7 @@ class MainActivity : AppCompatActivity() {
             .addOnSuccessListener { visionText ->
                 val detectedText = visionText.text
                 if (detectedText.isNotBlank()) {
-                    showTextDialogAndSpeak(detectedText)
+                    showTextDialogAndSpeak(detectedText, file.name)
                 } else {
                     Toast.makeText(this, "No text found in image", Toast.LENGTH_SHORT).show()
                 }
@@ -217,7 +217,7 @@ class MainActivity : AppCompatActivity() {
             val finalText = content.toString().trim()
 
             if (finalText.isNotBlank()) {
-                showTextDialogAndSpeak(finalText)
+                showTextDialogAndSpeak(finalText, file.name)
                 Toast.makeText(this, "EPUB text extracted successfully", Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(this, "No readable text found in EPUB", Toast.LENGTH_LONG).show()
@@ -235,7 +235,7 @@ class MainActivity : AppCompatActivity() {
         try {
             val detectedText = file.readText(Charsets.UTF_8)
             if (detectedText.isNotBlank()) {
-                showTextDialogAndSpeak(detectedText)
+                showTextDialogAndSpeak(detectedText, file.name)
             } else {
                 Toast.makeText(this, "Text file is empty", Toast.LENGTH_SHORT).show()
             }
@@ -268,7 +268,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             if (text.isNotBlank()) {
-                showTextDialogAndSpeak(text)
+                showTextDialogAndSpeak(text, file.name)
                 Toast.makeText(this, "Word document text extracted successfully", Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(this, "No text found in Word document", Toast.LENGTH_LONG).show()
@@ -290,7 +290,7 @@ class MainActivity : AppCompatActivity() {
                 val text = pdfStripper.getText(document).trim()
 
                 if (text.isNotBlank()) {
-                    showTextDialogAndSpeak(text)
+                    showTextDialogAndSpeak(text, file.name)
                     Toast.makeText(this, "PDF text extracted successfully", Toast.LENGTH_SHORT).show()
                 } else {
                     Toast.makeText(this, "No text found in PDF (may contain only images)", Toast.LENGTH_LONG).show()
@@ -329,7 +329,7 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    private fun showTextDialogAndSpeak(text: String) {
+    private fun showTextDialogAndSpeak(text: String, fileName: String) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_text_display, null)
         val textView = dialogView.findViewById<TextView>(R.id.dialogTextView)
         val readTextButton = dialogView.findViewById<Button>(R.id.buttonReadText)
@@ -366,13 +366,10 @@ class MainActivity : AppCompatActivity() {
                 if (currentRelativePath.isBlank()) folderName else "$currentRelativePath/$folderName"
             )
 
-            //TODO: Change to save the audio as the files name
-            val audioFile = File(savedAudiosDir, "tts_${System.currentTimeMillis()}.wav")
-
-            ttsHelper.synthesizeToFile(text, audioFile) { success ->
+            ttsHelper.synthesizeToFile(text, fileName) { files ->
                 runOnUiThread {
-                    if (success) {
-                        Toast.makeText(this, "Audio saved: ${audioFile.name}", Toast.LENGTH_LONG).show()
+                    if (files != null && files.isNotEmpty()) {
+                        Toast.makeText(this, "Audio saved: ${files.size} files", Toast.LENGTH_LONG).show()
                         loadFilesAndFolders()
                     } else {
                         Toast.makeText(this, "Failed to save audio", Toast.LENGTH_SHORT).show()
