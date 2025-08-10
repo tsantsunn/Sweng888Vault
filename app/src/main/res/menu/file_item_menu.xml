@@ -6,7 +6,4 @@
     <item
         android:id="@+id/menu_tts"
         android:title="Text to Speech" />
-    <item
-        android:id="@+id/menu_playAudio"
-        android:title="Play Audio" />
 </menu>

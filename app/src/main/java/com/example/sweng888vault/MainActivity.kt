@@ -24,7 +24,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.sweng888vault.databinding.ActivityMainBinding
 import com.example.sweng888vault.util.MimeTypeUtil
 import com.example.sweng888vault.util.FileStorageManager
-import com.example.sweng888vault.util.MediaManager
 import com.example.sweng888vault.util.TextToSpeechHelper
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
@@ -164,9 +163,6 @@ class MainActivity : AppCompatActivity() {
                         Toast.makeText(this, "Unreadable File", Toast.LENGTH_SHORT).show()
                     }
                 }
-            },
-            onMediaPlayer = { file ->
-                showAudioPlayer(file)
             }
         )
         binding.recyclerViewFiles.apply {
@@ -177,13 +173,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * Recognize Text from Images
-     */
+    /** Recognize Text from Images */
     private fun recognizeTextFromImage(file: File) {
         val imageBitmap = BitmapFactory.decodeFile(file.absolutePath)
         val image = InputImage.fromBitmap(imageBitmap, 0)
-
         val recognizer = TextRecognition.getClient(DEFAULT_OPTIONS)
 
         recognizer.process(image)
@@ -195,11 +188,13 @@ class MainActivity : AppCompatActivity() {
                     Toast.makeText(this, "No text found in image", Toast.LENGTH_SHORT).show()
                 }
             }
+
             .addOnFailureListener { e ->
                 Toast.makeText(this, "Failed to read text: ${e.message}", Toast.LENGTH_SHORT).show()
             }
     }
 
+    /** Recognize Text from EPUB */
     private fun readTextFromEpub(file: File) {
         try {
             val book = EpubReader().readEpub(FileInputStream(file))
@@ -228,9 +223,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /**
-     * Recognize Text from Text Files
-     */
+    /** Recognize Text from Text Files */
     private fun readTextFromFile(file: File) {
         try {
             val detectedText = file.readText(Charsets.UTF_8)
@@ -244,6 +237,8 @@ class MainActivity : AppCompatActivity() {
             return
         }
     }
+
+    /** Recognize Text from Word Files */
     private fun readTextFromWord(file: File) {
         try {
             val text = when {
@@ -280,9 +275,7 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    /**
-     * Read from PDF
-     */
+    /** Read Text from PDF */
     private fun readTextFromPdf(file: File) {
         try {
             PDDocument.load(file).use { document ->
@@ -299,34 +292,6 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             Toast.makeText(this, "Failed to read PDF file: ${e.message}", Toast.LENGTH_SHORT).show()
         }
-    }
-
-    private fun showAudioPlayer(file: File) {
-        val dialogView = layoutInflater.inflate(R.layout.dialog_audio_player, null)
-        val playButton = dialogView.findViewById<Button>(R.id.buttonPlay)
-        val pauseButton = dialogView.findViewById<Button>(R.id.buttonPause)
-        val closeButton = dialogView.findViewById<Button>(R.id.buttonClose)
-
-        val dialog = AlertDialog.Builder(this)
-            .setTitle("Audio Player")
-            .setView(dialogView)
-            .setCancelable(false) // User can't close the player if they click outside
-            .create()
-
-        playButton.setOnClickListener {
-            MediaManager.playAudio(this, file)
-            Log.i("MainActivity", "Playing audio")
-        }
-
-        pauseButton.setOnClickListener {
-            MediaManager.pauseAudio()
-        }
-
-        closeButton.setOnClickListener {
-            MediaManager.stopAudio()
-            dialog.dismiss()
-        }
-        dialog.show()
     }
 
     private fun showTextDialogAndSpeak(text: String, fileName: String) {

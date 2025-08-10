@@ -1,6 +1,7 @@
 package com.example.sweng888vault // Or your adapter package
 
 import android.view.LayoutInflater
+import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
@@ -15,8 +16,7 @@ import java.io.File
 class FileAdapter(
     private val onItemClick: (File) -> Unit,
     private val onItemDelete: (File) -> Unit, // Callback for delete action
-    private val onTextToSpeech: (File) -> Unit,
-    private val onMediaPlayer:(File) -> Unit
+    private val onTextToSpeech: (File) -> Unit
 ) : ListAdapter<File, FileAdapter.FileViewHolder>(FileDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): FileViewHolder {
@@ -27,7 +27,7 @@ class FileAdapter(
 
     override fun onBindViewHolder(holder: FileViewHolder, position: Int) {
         val file = getItem(position)
-        holder.bind(file, onItemClick, onItemDelete, onTextToSpeech, onMediaPlayer)
+        holder.bind(file, onItemClick, onItemDelete, onTextToSpeech)
     }
 
     class FileViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -40,8 +40,7 @@ class FileAdapter(
             file: File,
             onItemClick: (File) -> Unit,
             onItemDelete: (File) -> Unit,
-            onTextToSpeech: (File) -> Unit,
-            onMediaPlayer: (File) -> Unit
+            onTextToSpeech: (File) -> Unit
         ) {
             name.text = file.name
             if (file.isDirectory) {
@@ -59,10 +58,14 @@ class FileAdapter(
             // Show popup menu on menuButton click
             menuButton.setOnClickListener { view ->
                 val popup = PopupMenu(view.context, view)
-                popup.menuInflater.inflate(R.menu.file_item_menu, popup.menu)
+                val menu = popup.menu
 
-                //TODO: Add mp3 if we ever upload mp3s?
-                popup.menu.findItem(R.id.menu_playAudio)?.isVisible = file.extension.lowercase() == "wav"
+                // Only add the 'menu_tts' item if the file is not a wav file
+                if ((file.extension != "wav") || (file.extension != "mp3") || (file.extension != "mp4")) {
+                    menu.add(Menu.NONE, R.id.menu_tts, Menu.NONE, "Text to Speech")
+                }
+
+                menu.add(Menu.NONE, R.id.menu_delete, Menu.NONE, "Delete")
 
                 popup.setOnMenuItemClickListener { item ->
                     when (item.itemId) {
@@ -74,11 +77,7 @@ class FileAdapter(
                         R.id.menu_tts -> {
                             onTextToSpeech(file)
                             true
-                        }
 
-                        R.id.menu_playAudio -> {
-                            onMediaPlayer(file)
-                            true
                         }
                         else -> false
                     }
