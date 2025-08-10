@@ -28,6 +28,8 @@ import com.example.sweng888vault.util.TextToSpeechHelper
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions.DEFAULT_OPTIONS
+import com.tom_roush.pdfbox.pdmodel.PDDocument
+import com.tom_roush.pdfbox.text.PDFTextStripper
 import java.io.File
 
 class MainActivity : AppCompatActivity() {
@@ -141,8 +143,7 @@ class MainActivity : AppCompatActivity() {
                         recognizeTextFromImage(file)
                     }
                     "pdf" -> {
-                        //TODO: Need to implement this
-                        ttsHelper.speak("PDFs")
+                        readTextFromPdf(file)
                     }
                     "txt" -> {
                         readTextFromFile(file)
@@ -204,6 +205,27 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             Toast.makeText(this, "Failed to read text file: ${e.message}", Toast.LENGTH_SHORT).show()
             return
+        }
+    }
+
+    /**
+     * Read from PDF
+     */
+    private fun readTextFromPdf(file: File) {
+        try {
+            PDDocument.load(file).use { document ->
+                val pdfStripper = PDFTextStripper()
+                val text = pdfStripper.getText(document).trim()
+
+                if (text.isNotBlank()) {
+                    showTextDialogAndSpeak(text)
+                    Toast.makeText(this, "PDF text extracted successfully", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this, "No text found in PDF (may contain only images)", Toast.LENGTH_LONG).show()
+                }
+            }
+        } catch (e: Exception) {
+            Toast.makeText(this, "Failed to read PDF file: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 

@@ -36,19 +36,28 @@ class TextToSpeechHelper(private val context: Context) : TextToSpeech.OnInitList
         }
     }
 
-    fun speak(text: String, utteranceId: String = UUID.randomUUID().toString()) {
-        if (isReady) {
-            // Check if text exceeds max input length
-            if (text.length >= TextToSpeech.getMaxSpeechInputLength()) {
-                Log.w("TextToSpeechHelper", "Text length exceeds TTS max input length. Consider chunking.")
-                // Optionally, you could truncate or try to split here, but it's better handled by the caller
-                // For now, we'll try to speak it anyway, the engine might truncate or error.
-            }
-            tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId)
-        } else {
+    fun speak(text: String, baseUtteranceId: String = UUID.randomUUID().toString()) {
+        if (!isReady) {
             Log.w("TextToSpeechHelper", "TTS not ready. Cannot speak.")
-            // Optionally, re-initialize or queue the request if you build such logic
             Toast.makeText(context, "TTS is not ready. Please try again shortly.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val maxLength = TextToSpeech.getMaxSpeechInputLength()
+        if (text.length <= maxLength) {
+            // Safe to speak directly
+            tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, baseUtteranceId)
+        } else {
+            Log.w("TextToSpeechHelper", "Text exceeds max length. Splitting into chunks...")
+
+            // Split text into safe chunks
+            val chunks = text.chunked(maxLength - 100) // 100-char buffer to avoid hard limit issues
+
+            for ((index, chunk) in chunks.withIndex()) {
+                val utteranceId = "$baseUtteranceId-$index"
+                val queueMode = if (index == 0) TextToSpeech.QUEUE_FLUSH else TextToSpeech.QUEUE_ADD
+                tts?.speak(chunk, queueMode, null, utteranceId)
+            }
         }
     }
 

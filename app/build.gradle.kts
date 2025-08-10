@@ -20,9 +20,16 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    packagingOptions {
+        pickFirst("com/tom_roush/pdfbox/resources/glyphlist/glyphlist.txt")
+        pickFirst("com/tom_roush/pdfbox/resources/glyphlist/*")
+
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -46,6 +53,7 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.multidex) // PDF, Doc, and Docx libraries are large
     implementation(libs.text.recognition) //Text-to-Speech library
+    implementation(libs.tom.roush.pdfbox.android)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
