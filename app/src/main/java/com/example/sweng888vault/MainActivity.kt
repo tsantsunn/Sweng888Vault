@@ -93,8 +93,6 @@ class MainActivity : AppCompatActivity() {
             }
         })
         ttsHelper = TextToSpeechHelper(this)
-
-
     }
 
     //Handles the PopupMenu when "Add File" is clicked
